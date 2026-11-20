@@ -143,7 +143,7 @@ st.markdown(
     f"""
     <div class="hero">
       <h1>🔬 Vision Lab</h1>
-      <p>Drop in any photo — the model tells you what it sees, <b>how sure it is</b>, and <b>where it looked</b>.</p>
+      <p>Drop in any photo the model tells you what it sees, <b>how sure it is</b>, and <b>where it looked</b>.</p>
       <span class="chip">PyTorch</span><span class="chip">{spec.name}</span><span class="chip">Grad-CAM</span>
       <span class="chip">Streamlit</span><span class="chip">{str(clf.device).upper()}</span>
     </div>
