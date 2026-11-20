@@ -13,10 +13,10 @@ trained by researchers on ImageNet, a collection of about 1.3 million photos sor
 (tiger cat, balloon, espresso, school bus, …). This app lets you try them on your own images and, more importantly,
 helps you judge whether to **trust** an answer:
 
-- **Confidence** — how sure the model is, as a percentage.
-- **Heatmap (Grad-CAM)** — the red/yellow areas show which parts of the photo pushed the model towards its answer.
-- **Warnings** — if the model is guessing, the app says so instead of presenting a wrong label as fact.
-- **Comparison** — run several models on one image and see where they agree or disagree.
+- **Confidence** - how sure the model is, as a percentage.
+- **Heatmap (Grad-CAM)** - the red/yellow areas show which parts of the photo pushed the model towards its answer.
+- **Warnings** - if the model is guessing, the app says so instead of presenting a wrong label as fact.
+- **Comparison** - run several models on one image and see where they agree or disagree.
 
 ## How the app works (the flow)
 
@@ -49,11 +49,11 @@ The sidebar on the left holds the settings.
 
 Once an image is loaded you see:
 
-- **Top prediction** — the most likely category, its probability and a confidence badge.
-- **Latency / Entropy / Input size** — how long the model took, how spread-out its guesses were
+- **Top prediction** - the most likely category, its probability and a confidence badge.
+- **Latency / Entropy / Input size** - how long the model took, how spread-out its guesses were
   (0 = certain, 1 = completely undecided) and the size of your image.
-- **Bar chart** — the top-K candidates (set K in the sidebar, 3–10).
-- **Heatmap** — Grad-CAM for any candidate you pick under *Explain class*.
+- **Bar chart** - the top-K candidates (set K in the sidebar, 3–10).
+- **Heatmap** - Grad-CAM for any candidate you pick under *Explain class*.
 
 In the picture above, the model's top two guesses (*tiger cat* 21 % and *tabby* 20.6 %) are almost tied, so the
 badge says **Uncertain**. The heatmap shows it focused on the cat's face and body, which is what you would hope for.
