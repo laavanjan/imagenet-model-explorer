@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Cache pretrained weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch
+          key: torch-weights-resnet50-v2
+      - name: Run tests
+        run: python -m pytest
+      - name: Smoke-test the Streamlit app
+        run: |
+          streamlit run app.py --server.headless true --server.port 8501 &
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:8501/_stcore/health && exit 0
+            sleep 2
+          done
+          echo "app did not become healthy" && exit 1
