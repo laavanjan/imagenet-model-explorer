@@ -1,12 +1,15 @@
 name: Deploy to Hugging Face Space
 
-# Mirrors hf_space/ (plus the shared classifier.py) to the Space whenever they change on main.
+# Mirrors the app (app.py, classifier.py, requirements.txt) plus the Space card in hf_space/README.md
+# to the Hugging Face Space whenever they change on main.
 on:
   push:
     branches: [main]
     paths:
-      - hf_space/**
+      - app.py
       - classifier.py
+      - requirements.txt
+      - hf_space/**
       - .github/workflows/deploy-hf-space.yml
   workflow_dispatch:
 
@@ -28,8 +31,9 @@ jobs:
         run: |
           if [ -z "$HF_TOKEN" ]; then echo "Add a repository secret named HF_TOKEN (a Hugging Face Write token)."; exit 1; fi
           git clone "https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_USER}/${HF_SPACE}" space
-          rsync -a --delete --exclude '.git' --exclude '.gitattributes' hf_space/ space/
-          cp classifier.py space/classifier.py   # single source of truth for the engine
+          find space -mindepth 1 -maxdepth 1 ! -name .git ! -name .gitattributes -exec rm -rf {} +
+          cp app.py classifier.py requirements.txt space/
+          cp hf_space/README.md space/README.md   # the Space card (title, SDK and version)
           cd space
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
