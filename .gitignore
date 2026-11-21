@@ -10,6 +10,3 @@ __pycache__/
 CLAUDE.md
 CLAUDE.local.md
 .mcp.json
-
-# Copied from the repo root by the deploy workflow
-hf_space/classifier.py
