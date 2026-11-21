@@ -94,7 +94,7 @@ flowchart LR
     A["You push to GitHub<br/>main branch"] --> B{"Did the app files<br/>change?"}
     B -- no --> C["Nothing to deploy"]
     B -- yes --> D["GitHub Action:<br/>deploy-hf-space.yml"]
-    D --> E["Copy app.py, classifier.py, requirements.txt<br/>and the Space card into the Space repo"]
+    D --> E["Copy app.py, classifier.py, requirements.txt,<br/>examples/ and the Space card into the Space repo"]
     E --> F["Push to Hugging Face<br/>using the HF_TOKEN secret"]
     F --> G["Space rebuilds:<br/>installs PyTorch, downloads weights"]
     G --> H["Live demo updated"]
@@ -132,7 +132,7 @@ model. Run `python benchmark.py --write` to regenerate [`docs/benchmarks.md`](do
 
 | Step in the flow | Where it happens |
 |---|---|
-| 1–2. Load and clean the image | `_to_rgb`, `load_image_from_url` in `app.py` / `classifier.py` |
+| 1–2. Load and clean the image | `_to_rgb` in `app.py`, `load_image_from_url` in `classifier.py` |
 | 3–5. Preprocess, predict, top-5 | `ImageClassifier.predict` in `classifier.py` |
 | 6. Confidence bands and the unreliable warning | `confidence_level` in `classifier.py` |
 | 7. Grad-CAM | `ImageClassifier.grad_cam`, `overlay_heatmap` in `classifier.py` |
@@ -147,6 +147,7 @@ Project layout:
 
 ```
 app.py               the Gradio interface (the live demo)
+examples/            the three example photos (CC0 / public domain, from scikit-image's sample data)
 classifier.py        model registry, inference, Grad-CAM, image loading
 requirements.txt     dependencies (CPU PyTorch + Gradio)
 hf_space/README.md   the Hugging Face Space card (title, SDK, Gradio version)
