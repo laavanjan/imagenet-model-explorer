@@ -38,25 +38,28 @@ The demo runs on a free Hugging Face Space, so after a quiet period the first vi
 
 ### 1. Add an image
 
-Drop a file, use the webcam or clipboard, or **paste an image link** into the box under the upload area (it must be a
-direct link to the picture itself, up to 15 MB). Then click **Classify** (or **Classify link**).
+Click one of the **Try an example** buttons (cat, coffee, abstract art), or drop in a file, use the webcam or
+clipboard, or **paste an image link** into the box under the upload area and click **Load link** (it must be a direct
+link to the picture itself, up to 15 MB). Then click **Classify**; files and examples classify as soon as they load.
 
-![Start screen with the upload area and link box](docs/screenshots/hf-home.png)
+![Start screen with the upload area, link box and examples](docs/screenshots/hf-home.png)
 
 ### 2. Read the result
 
-- **Top 5 predictions** - the candidate categories and their probabilities.
-- **Verdict** - a confidence badge (see the table below) and how long the model took.
-- **Heatmap** - Grad-CAM for the top answer, drawn on the cropped image the model actually saw.
+- **Result card** - the top answer and its probability, a colour-coded confidence badge (see the table below),
+  a plain-English hint, the top 5 candidates as bars, how long the model took and how certain it was.
+- **Model's view** - the resized, centre-cropped picture the network actually received.
+- **Heatmap** - Grad-CAM for the top answer drawn on that crop. Drag **Heatmap strength** to fade it in or out; this
+  redraws instantly without running the model again.
 
-In the picture at the top, a cat photo was classified from a link: *Egyptian cat* 42 %, then *tiger cat* and *tabby*.
-The heatmap lights up the cat's head and body, which is what you would hope for.
+In the picture at the top, the cat example comes out as *Egyptian cat* at 67.9 % (moderate confidence), with *tabby*
+and *tiger cat* as runner-ups. The heatmap lights up the cat's face, which is what you would hope for.
 
 ### 3. Know when the answer is not trustworthy
 
 ImageNet has no category for many things (for example a hibiscus flower, or abstract art). The model must still pick
 *something*, so it chooses the nearest match. When its top probability is under 15 %, the app flags the result as
-**Unreliable** and explains why. This abstract colour pattern is called a *ballpoint* at only 11 %:
+**Unreliable** and explains why. This abstract colour pattern is called a *ballpoint* at only 13 %:
 
 ![Unreliable-prediction warning](docs/screenshots/hf-unreliable.png)
 
