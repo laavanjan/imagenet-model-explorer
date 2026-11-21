@@ -1,4 +1,4 @@
-"""Core inference engine: pretrained ImageNet classifiers + Grad-CAM, independent of Streamlit.
+"""Core inference engine: pretrained ImageNet classifiers + Grad-CAM, independent of the web interface.
 
 Several torchvision architectures are exposed through one interface (see ``MODEL_SPECS``).
 Each spec knows how to build the network, which pretrained weights to use and which layer
