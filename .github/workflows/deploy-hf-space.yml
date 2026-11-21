@@ -1,6 +1,6 @@
 name: Deploy to Hugging Face Space
 
-# Mirrors the app (app.py, classifier.py, requirements.txt) plus the Space card in hf_space/README.md
+# Mirrors the app (app.py, classifier.py, requirements.txt, examples/) plus the Space card in hf_space/README.md
 # to the Hugging Face Space whenever they change on main.
 on:
   push:
@@ -9,6 +9,7 @@ on:
       - app.py
       - classifier.py
       - requirements.txt
+      - examples/**
       - hf_space/**
       - .github/workflows/deploy-hf-space.yml
   workflow_dispatch:
@@ -33,6 +34,7 @@ jobs:
           git clone "https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_USER}/${HF_SPACE}" space
           find space -mindepth 1 -maxdepth 1 ! -name .git ! -name .gitattributes -exec rm -rf {} +
           cp app.py classifier.py requirements.txt space/
+          cp -r examples space/examples
           cp hf_space/README.md space/README.md   # the Space card (title, SDK and version)
           cd space
           git config user.name "github-actions"
