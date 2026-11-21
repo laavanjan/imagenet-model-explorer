@@ -21,14 +21,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/torch
-          key: torch-weights-resnet50-v2
+          key: torch-weights-resnet50-convnext-tiny
       - name: Run tests
         run: python -m pytest
-      - name: Smoke-test the Streamlit app
+      - name: Smoke-test the Gradio app
         run: |
-          streamlit run app.py --server.headless true --server.port 8501 &
-          for i in $(seq 1 60); do
-            curl -fs http://localhost:8501/_stcore/health && exit 0
+          GRADIO_SERVER_PORT=7860 python app.py &
+          for i in $(seq 1 90); do
+            curl -fs -o /dev/null http://localhost:7860/ && echo "app is up" && exit 0
             sleep 2
           done
-          echo "app did not become healthy" && exit 1
+          echo "app did not start" && exit 1
