@@ -4,6 +4,15 @@ Upload a photo and see **what an AI thinks it is, how sure it is, and where in t
 Compare five different pretrained image-recognition models on the same photo and see where they disagree.
 (In the app itself the header says *Vision Lab*.)
 
+**Two ways to use it**
+
+| | Full explorer (Streamlit) | Hosted demo (Gradio) |
+|---|---|---|
+| **Where** | Run it yourself ([Quick start](#quick-start)) | **[Open the live demo](https://huggingface.co/spaces/Laavanjan/image-classifier)** |
+| **Models** | All five, with a comparison table | ConvNeXt-Tiny (82.5 % top-1), fast on CPU |
+| **Input** | Upload, image URL, webcam | Upload, image link, webcam, clipboard |
+| **Code** | `app.py` | `hf_space/app.py` |
+
 ![Result page: prediction, probabilities and Grad-CAM heatmap](docs/screenshots/cat.png)
 
 ## In plain English
@@ -20,6 +29,9 @@ helps you judge whether to **trust** an answer:
 
 ## How the app works (the flow)
 
+Both versions share one engine, `classifier.py`. This is the flow of the full explorer; the hosted demo is the same
+flow with a single fixed model (step 3 is skipped and there is no comparison in step 9).
+
 ```mermaid
 flowchart TD
     A["1. You add an image<br/>upload, image URL, or webcam"] --> B["2. Clean it up<br/>fix rotation, flatten transparency, convert to RGB"]
@@ -35,7 +47,29 @@ flowchart TD
     J --> K["9. Optional: compare other models<br/>on the same image"]
 ```
 
-## Using it, step by step
+## Try it online (hosted demo)
+
+The **[live demo](https://huggingface.co/spaces/Laavanjan/image-classifier)** needs no install. It runs on a free
+Hugging Face Space, so after a quiet period the first visit can take about 30 seconds to wake up.
+
+1. Add an image: drop a file, use the webcam or clipboard, or **paste an image link** into the box under the upload area
+   (it must be a direct link to the picture itself, up to 15 MB).
+2. Click **Classify** (or **Classify link**).
+3. Read the top 5 predictions, the confidence verdict and the Grad-CAM heatmap.
+
+![Hosted demo: empty start screen](docs/screenshots/hf-home.png)
+
+Here a cat photo was classified from a link. The model says *Egyptian cat* at 42 %, with *tiger cat* and *tabby* next,
+and the heatmap lights up the cat's head and body:
+
+![Hosted demo: a cat classified from an image link](docs/screenshots/hf-result.png)
+
+An abstract colour pattern is not any of the 1,000 ImageNet categories, so the demo calls it a *ballpoint* at only
+11 % and shows the **Unreliable** warning instead of pretending to be sure:
+
+![Hosted demo: unreliable-prediction warning](docs/screenshots/hf-unreliable.png)
+
+## Using the full explorer, step by step
 
 ### 1. Open the app and add an image
 
@@ -114,6 +148,31 @@ docker build -t imagenet-model-explorer .
 docker run -p 8501:8501 imagenet-model-explorer
 ```
 
+## Deployment (hosted demo)
+
+The demo lives in [`hf_space/`](hf_space), which is deployed automatically. Pushing to `main` updates the live Space:
+
+```mermaid
+flowchart LR
+    A["You push to GitHub<br/>main branch"] --> B{"Did hf_space/ or<br/>classifier.py change?"}
+    B -- no --> C["Nothing to deploy"]
+    B -- yes --> D["GitHub Action:<br/>deploy-hf-space.yml"]
+    D --> E["Copy hf_space/ and the shared<br/>classifier.py into the Space repo"]
+    E --> F["Push to Hugging Face<br/>using the HF_TOKEN secret"]
+    F --> G["Space rebuilds:<br/>installs PyTorch, downloads weights"]
+    G --> H["Live demo updated"]
+```
+
+- **One-time setup:** create a Hugging Face *Write* token and add it to the GitHub repo as an Actions secret named
+  `HF_TOKEN` (Settings → Secrets and variables → Actions). The workflow is
+  [`.github/workflows/deploy-hf-space.yml`](.github/workflows/deploy-hf-space.yml) and can also be started by hand from the Actions tab.
+- **Why Gradio and not Streamlit:** a free Space does not offer Streamlit or Docker, so the hosted demo is a small
+  Gradio app. It is wrapped in a `@spaces.GPU` function so it also starts on ZeroGPU hardware; on plain CPU the
+  decorator does nothing.
+- **Keep `classifier.py` single-sourced:** the workflow copies the root file into the Space. `hf_space/classifier.py`
+  is git-ignored; to run the demo locally, copy the root `classifier.py` into `hf_space/` first, then
+  `pip install gradio` and `python app.py`.
+
 ## The models
 
 Accuracy is torchvision's published ImageNet top-1 score for the weights used. Latency is measured by
@@ -142,6 +201,7 @@ accurate but slowest, because it reads a larger 384 px input. Run `python benchm
 | 7. Confidence bands and the unreliable warning | `confidence_level` |
 | 8. Grad-CAM | `ImageClassifier.grad_cam`, `overlay_heatmap` |
 | 9. Interface, caching, comparison table | `app.py` (Streamlit) |
+| Hosted demo interface (one model, link box, GPU wrapper) | `hf_space/app.py` (Gradio) |
 
 **Grad-CAM in one paragraph** ([Selvaraju et al., 2017](https://arxiv.org/abs/1610.02391)): take the network's last
 convolutional layer, work out how much each of its feature maps contributed to the chosen class score, add the maps
@@ -152,12 +212,13 @@ Project layout:
 
 ```
 classifier.py        model registry, inference, Grad-CAM, image loading (no Streamlit dependency)
-app.py               the Streamlit interface
+app.py               the Streamlit interface (full explorer)
+hf_space/            the hosted Gradio demo: app.py, requirements.txt, Space README
 benchmark.py         CPU latency benchmark for every model
 tests/               pytest suite (45 tests)
 docs/                benchmarks and screenshots
-Dockerfile           container image
-.github/workflows/   CI: tests plus an app smoke test
+Dockerfile           container image for the Streamlit app
+.github/workflows/   CI (tests plus an app smoke test) and auto-deploy to the Hugging Face Space
 ```
 
 ## Testing
@@ -183,4 +244,4 @@ image. Image-handling tests cover transparency, EXIF rotation, corrupt files and
 - Open-vocabulary mode with CLIP so you can type your own labels (e.g. "hibiscus")
 - Calibration (temperature scaling) and a reliability diagram
 - Transformer models with attention-based explanations
-- Hosted demo
+- Model picker and comparison table in the hosted demo (it currently runs one model)
