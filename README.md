@@ -4,6 +4,10 @@ Upload a photo and see **what an AI thinks it is, how sure it is, and where in t
 
 **[Open the live demo](https://huggingface.co/spaces/Laavanjan/image-classifier)** - no install needed.
 
+**Fine-tuned on a real problem:** the same model, retrained to spot cassava leaf diseases, reaches **88.1 % test
+accuracy** on 21,397 farm photos. [See the results and the mistakes it makes](#fine-tuning-spotting-cassava-leaf-diseases),
+or [the full run on Kaggle](https://www.kaggle.com/code/laavanjan/cassava-leaf-disease-fine-tuning-convnext-tiny).
+
 ![Result: prediction, probabilities and Grad-CAM heatmap](docs/screenshots/hf-result.png)
 
 ## In plain English
@@ -128,6 +132,101 @@ Latency depends only on the architecture, so the benchmark uses random weights a
 ConvNeXt-Tiny is both faster and 1.6 points more accurate than ResNet-50 on this CPU, which is why it is the demo's
 model. Run `python benchmark.py --write` to regenerate [`docs/benchmarks.md`](docs/benchmarks.md) on your own machine.
 
+## Fine-tuning: spotting cassava leaf diseases
+
+Cassava is a main food for many millions of people in Africa, and leaf diseases can destroy a harvest. To show the
+whole machine-learning job, not only using a ready-made model, ConvNeXt-Tiny was **fine-tuned** to tell 4 cassava
+diseases and healthy leaves apart, using the [Kaggle Cassava Leaf Disease](https://www.kaggle.com/competitions/cassava-leaf-disease-classification)
+photos: 21,397 pictures taken by farmers in Uganda.
+
+Everything is in one notebook, [`notebooks/cassava_finetune.ipynb`](notebooks/cassava_finetune.ipynb), which runs on
+a free Kaggle GPU in under an hour. **[See the full run with every output on Kaggle](https://www.kaggle.com/code/laavanjan/cassava-leaf-disease-fine-tuning-convnext-tiny).**
+
+### The data is very uneven
+
+![Photos per class](docs/cassava/class_counts.png)
+
+61.5 % of the photos show one disease, **CMD (mosaic)**. A model that always answers "CMD" is right 61.5 % of the time
+while being useless for every other class. That is why the results below also use **macro F1**: the F1 score of each
+class, averaged, so every class counts the same.
+
+### How it was trained
+
+- **Split:** 80 % train, 10 % validation, 10 % test, with the same class mix in each (seed 42). The test photos were
+  used only once, at the very end.
+- **Step 1, baseline:** keep the ImageNet layers frozen and train only a new last layer (2 epochs).
+- **Step 2, fine-tune:** train every layer with a smaller learning rate (10 epochs) and keep the epoch with the best
+  validation macro F1.
+- **Details:** 384 × 384 input, random crops, flips and colour changes, AdamW with a cosine schedule, label smoothing
+  0.1 (some labels in this dataset are wrong), class weights so small classes are not ignored, and mixed precision.
+  Training took 49 minutes on one Tesla T4.
+
+### Results (2,140 test photos the model never saw)
+
+| Model | Test accuracy | Test macro F1 |
+|---|---:|---:|
+| Always answer "CMD" (the biggest class) | 61.5 % | 0.152 |
+| Baseline: only the last layer trained | 79.4 % | 0.662 |
+| **Fine-tuned: all layers trained** | **88.1 %** | **0.792** |
+
+| Class | Test photos | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|
+| CBB (bacterial blight) | 109 | 0.600 | 0.743 | 0.664 |
+| CBSD (brown streak) | 219 | 0.836 | 0.817 | 0.827 |
+| CGM (green mottle) | 238 | 0.805 | 0.744 | 0.773 |
+| CMD (mosaic) | 1,316 | 0.960 | 0.955 | 0.957 |
+| Healthy | 258 | 0.736 | 0.744 | 0.740 |
+
+For comparison, the best competition scores were about 91 % accuracy, but on Kaggle's hidden test set (different
+photos) and usually from several large models combined. This is one small model trained once.
+
+![Confusion matrix on the test set](docs/cassava/confusion_matrix.png)
+
+![Loss and validation score per epoch](docs/cassava/training_curves.png)
+
+### What the results show
+
+- **Fine-tuning every layer matters:** +8.7 points of accuracy and +0.13 macro F1 over training only the last layer.
+- **CBB is the weakest class.** It is the smallest (5 % of photos), and the class weight pushes the model to say "CBB"
+  more often: it finds 74 % of real CBB leaves (recall), but only 60 % of its "CBB" answers are right (precision).
+  Most of the false alarms are leaves labelled Healthy (34 of them in the confusion matrix).
+- **CGM and CMD get mixed up** (28 and 27 photos), which makes sense: both make leaves look mottled yellow and green.
+- **The model starts to overfit after fine-tune epoch 6** (epoch 8 on the chart): training loss keeps falling, but
+  validation loss stops improving and goes up a little (0.844 → 0.869). The notebook kept epoch 6 automatically.
+
+### The 10 mistakes it was most sure about
+
+These are the test photos where the model was wrong but at least 90 % sure. Each one is shown above its Grad-CAM
+heatmap (where the model looked for its answer).
+
+![The 10 most confident mistakes, with Grad-CAM heatmaps](docs/cassava/mistakes.jpg)
+
+| # | Label | Model said | What the photo shows | Likely reason |
+|---|---|---|---|---|
+| 1 | CBSD | CBB (95 %) | Yellow, wilting leaves with brown dead patches; the heatmap is on the patches. | Dead patches and wilting are CBB signs. CBSD does its worst damage in the roots, which a leaf photo can't show. Wrong label, or both diseases. |
+| 2 | CMD | Healthy (94 %) | Flat, clean green leaves, no mosaic pattern. | Probably a wrong label, or the sick leaves were at the sides of the photo: the centre crop cuts off about 30 % of the width. |
+| 3 | Healthy | CBB (93 %) | Yellow leaves with dark brown spots. | Doesn't look healthy: probably a wrong label. |
+| 4 | CMD | CBSD (91 %) | Yellow patches along the veins; the leaf is not twisted. | Yellowing along the veins looks like CBSD, while CMD usually twists the leaves. A hard look-alike. |
+| 5 | Healthy | CBB (91 %) | One wilted yellow leaf with brown spots. | Wilting and spots are CBB signs: probably a wrong label, or an old leaf dying. |
+| 6 | Healthy | CBB (91 %) | Yellow, drooping leaves with brown edges. | Same as #3 and #5: probably a wrong label. |
+| 7 | Healthy | CBB (90 %) | A mostly green plant with a few dried, spotted leaves; the heatmap is on those leaves. | The label describes the whole plant, the model reacted to the few bad leaves. An unclear label. |
+| 8 | CMD | CGM (90 %) | Mottled yellow-green, slightly narrow leaves. | CMD and CGM both cause mottling. A hard look-alike. |
+| 9 | Healthy | CBSD (90 %) | A green leaf with small yellow blotches, in strong sun and shadow. | The model may read sunlight spots as disease blotches. A model weakness (or very early CBSD). |
+| 10 | CGM | Healthy (90 %) | Bright green leaves; any symptoms are very faint. | Mild CGM is hard to see. A model weakness. |
+
+**What this says:** about half of the most confident mistakes (#2, #3, #5, #6, #7) look like **wrong or unclear labels**,
+two are **look-alike diseases** (#4, #8), and two are **real model weaknesses** (#9 sunlight, #10 very mild symptoms).
+In every case the heatmap sits on the leaves, mostly on spots and yellow patches, not on soil or sky, so the model
+looks at the right things even when it is wrong. These are a careful reading of the photos, not an expert diagnosis.
+
+### Limits and next steps
+
+- All photos come from one survey, so the score on photos from other places and phones is still unknown. Next step:
+  test on outside photos (the notebook has a section for this).
+- It is a study project, not a diagnosis tool: a farmer should still get an expert to confirm.
+- Ideas to try, one at a time: a bigger input (448 or 512), no class weights (to see the CBB precision/recall
+  trade-off), about 6 epochs instead of 10, and adding the model to the live demo.
+
 ## Under the hood
 
 | Step in the flow | Where it happens |
@@ -152,8 +251,9 @@ classifier.py        model registry, inference, Grad-CAM, image loading
 requirements.txt     dependencies (CPU PyTorch + Gradio)
 hf_space/README.md   the Hugging Face Space card (title, SDK, Gradio version)
 benchmark.py         CPU latency benchmark for every model
+notebooks/           Kaggle notebook: fine-tune ConvNeXt-Tiny to spot cassava leaf diseases
 tests/               pytest suite (45 tests)
-docs/                benchmarks and screenshots
+docs/                benchmarks, screenshots and the cassava results (docs/cassava/)
 .github/workflows/   CI (tests plus an app start-up check) and auto-deploy to the Space
 ```
 
@@ -178,6 +278,7 @@ image. Image-handling tests cover transparency, EXIF rotation, corrupt files and
 
 ## Roadmap
 
+- Cassava mode in the live demo, using the fine-tuned model
 - Open-vocabulary mode with CLIP so you can type your own labels (e.g. "hibiscus")
 - Calibration (temperature scaling) and a reliability diagram
 - A model picker and comparison table in the demo

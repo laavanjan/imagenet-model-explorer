@@ -1,0 +1,44 @@
+{
+  "test": {
+    "always_CMD": {
+      "accuracy": 0.6149532710280374,
+      "macro_f1": 0.15231481481481482
+    },
+    "baseline": {
+      "accuracy": 0.7939252336448598,
+      "macro_f1": 0.6618404745702439
+    },
+    "finetuned": {
+      "accuracy": 0.8813084112149533,
+      "macro_f1": 0.7921768005868743
+    }
+  },
+  "photos": {
+    "train": 17117,
+    "val": 2140,
+    "test": 2140
+  },
+  "classes": {
+    "CBB": "Cassava Bacterial Blight (CBB)",
+    "CBSD": "Cassava Brown Streak Disease (CBSD)",
+    "CGM": "Cassava Green Mottle (CGM)",
+    "CMD": "Cassava Mosaic Disease (CMD)",
+    "Healthy": "Healthy"
+  },
+  "settings": {
+    "QUICK_RUN": false,
+    "IMG_SIZE": 384,
+    "BATCH_SIZE": 32,
+    "BASELINE_EPOCHS": 2,
+    "FINETUNE_EPOCHS": 10,
+    "BASELINE_LR": 0.001,
+    "FINETUNE_LR": 0.0002,
+    "WEIGHT_DECAY": 0.05,
+    "LABEL_SMOOTHING": 0.1,
+    "USE_CLASS_WEIGHTS": true,
+    "SEED": 42
+  },
+  "torch": "2.11.0+cu130",
+  "gpu": "Tesla T4",
+  "training_minutes": 49.4
+}
