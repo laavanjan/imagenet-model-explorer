@@ -5,6 +5,11 @@ __pycache__/
 .torch/
 .DS_Store
 
+# Trained model weights (about 110 MB each): upload them to the Hugging Face Hub instead
+*.pt
+*.pth
+.ipynb_checkpoints/
+
 # Claude Code / AI assistant files
 .claude/
 CLAUDE.md
